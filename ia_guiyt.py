@@ -1,4 +1,3 @@
-from requests import request
 import speech_recognition as sr
 import subprocess as sub
 import pyttsx3
