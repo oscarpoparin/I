@@ -80,9 +80,21 @@ def english_voice():
 #funcion para cargar la voz
 
 def change_voice(id):
-    engine.setProperty('voice', voices[id].id)
-    engine.setProperty('rate', 145)
-    talk("hola... bienvenido soy IA Oparin")
+    #engine.setProperty('voice', voices[id].id)
+    #engine.setProperty('rate', 145)
+    #talk("hola... bienvenido soy IA Oparin")
+    if id == 0:
+        engine = pyttsx3.init()
+        engine.setProperty('voice','es')
+        engine.setProperty('rate', 150)
+        engine.setProperty('volume', 1)
+        talk("hola, soy Oparin, tu asistente personal")
+    elif id == 1:
+        engine = pyttsx3.init()
+        engine.setProperty('voice','en-us')
+        engine.setProperty('rate', 150)
+        engine.setProperty('volume', 1)
+        talk("hola, soy Oparin, tu asistente personal")
 
 #programacion del programa
 
@@ -147,6 +159,7 @@ def talk(text):
 def read_and_talk():
     text = text_info.get("1.0" , "end") #obtener todo el contenido de principio a fin
     talk(text)
+    text.delete("1.0", "end")
 
 #funcion que escribe lo que encontro en internet y lo escribe en la caja de texto
 
@@ -293,7 +306,7 @@ def run_oparin():
             answer = chat.get_response(rec) # obtiene la respuesta del bot
             print("OPARIN: " , answer)
             talk(answer)
-            if 'adios' in request:
+            if 'adios' in rec:
                 break
     main_window.update() #actualizar la ventana y evitamos el error de no responde
         
