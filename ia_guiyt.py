@@ -3,69 +3,67 @@ import subprocess as sub
 import pyttsx3
 import pywhatkit
 import wikipedia
-import datetime
-import keyboard
 import os
 from tkinter import *
 from PIL import Image, ImageTk
-from pygame import mixer
 import threading as tr
-import whatsapp as whapp #archivo whatsapp.py
-import browser #archivo browser.py
-import database #archivo con la coneccion con la base de datos database.py
+import whatsapp as whapp
+import browser
+import database
 from chatterbot import ChatBot
-from chatterbot.trainers import ListTrainer 
+from chatterbot import preprocessors
+from chatterbot.trainers import ListTrainer
 
-main_window = Tk() #ventana raiz
-main_window.title("Oparin AI")
+#Creacion de ventana principal
+                                                                                                                                    
+main_window = Tk()                  #ventana raiz
+main_window.title("IA Oparin")
+main_window.geometry("800x450")     #ancho - alto
+main_window.resizable(0, 0)
+main_window.configure(bg="#444343")
+#main_window.mainloop()             #se ejecutara todo lo que este antes de esta instruccion
 
-main_window.geometry("800x450") #ancho - alto
-main_window.resizable(0,0) #dejar estatico el tamaño de pantalla
-main_window.configure(bg='#ccc')
-#main_window.mainloop() #se ejecutara todo lo que este antes de esta instruccion
+#Comandos que podemos usar, Muestra el contenido en interfaz grafica
 
-#variables con los comandos a usar
-
-comandos= """
-    Comandos que puedes utilizar:
-    - Reproduce ... (cancion/videos)
-    - Busca ... (algo)
-    - Abre ... (pagina o app)
-    - Archivo ... (nombre)
-    - Termina 
+comandos = """
+    Comandos que puedes usar:
+    - Reproduce..(canción/video)
+    - Busca...(algo)
+    - Buscame...(algo)
+    - Abre...(página web/app)
+    - Archivo...(nombre)
+    - Mensaje...(whatsapp)
+    - cierra... (app)
+    - Cierrate...(fin programa)
 """
+#titulo
 
+label_title = Label(
+    main_window, 
+    text="Oparin AI", 
+    bg="#444343", 
+    fg="#fff",
+    font=('Arial', 30, 'bold')
+)
+label_title.pack(pady=10)
 
+#contenedor de comandos
 
-label_title = Label(    main_window,                    #nombre de la ventana que contendra la etiqueta
-                        text="Oparin AI",               #contenido del texto
-                        bg="#ccc",                   #color del contenedor
-                        fg="#2c3e50",                   #color de texto
-                        font=('Arial', 30, 'bold')      #tipo de letra y tamaño
-                    ) 
-label_title.pack(pady=10) #espaciado similar al padding
-
-#lienzo para mostrar los comandos que se pueden utilizar
-
-canvas_comandos = Canvas(bg="#ccc", border=3, height=150, width=195)
-canvas_comandos.config(highlightbackground="#000") #colocacion de un color al borde
+canvas_comandos = Canvas(bg="#444343", height=170, width=195)
 canvas_comandos.place(x=0, y=0)
-canvas_comandos.create_text(90, 80, text=comandos, fill="#000", font='Arial 10') #posicion x, posicion y
+canvas_comandos.create_text(90, 80, text=comandos, fill="#fff", font='Arial 10')
 
+#Caja de texto
 
-#Cuadro de texto que contendra lo encontrado en internet
+text_info = Text(main_window, bg="#444343", fg="#fff", font=('Arial', 10))
+text_info.place(x=0, y=170, height=280, width=198)
 
-text_info = Text(main_window, bg="#ccc")
-text_info.place(x=0, y=163, height=285, width=203)
-
-
-#colocar imagen 
+#Agregar imagen 
 
 img = Image.open("machine-learning.png")
 img = img.resize((400,240), Image.ANTIALIAS)
 img_oparin = ImageTk.PhotoImage(img)
-window_photo = Label(main_window, image=img_oparin, bg="#ccc")
-#window_photo.pack(pady=5)
+window_photo = Label(main_window, image=img_oparin, bg="#444343")
 window_photo.place(x=209, y=70)
 
 #programacion botones
@@ -79,48 +77,34 @@ def english_voice():
 #funcion para cargar la voz
 
 def change_voice(id):
-    #engine.setProperty('voice', voices[id].id)
-    #engine.setProperty('rate', 145)
-    #talk("hola... bienvenido soy IA Oparin")
-    if id == 0:
-        engine = pyttsx3.init()
-        engine.setProperty('voice','es')
-        engine.setProperty('rate', 150)
-        engine.setProperty('volume', 1)
-        talk("hola, soy Oparin, tu asistente personal")
-    elif id == 1:
-        engine = pyttsx3.init()
-        engine.setProperty('voice','en-us')
-        engine.setProperty('rate', 150)
-        engine.setProperty('volume', 1)
-        talk("hola, soy Oparin, tu asistente personal")
+    engine.setProperty('voice', voices[id].id)
+    engine.setProperty('rate', 145)
+    talk("Hola, soy Oparin, tu asistente personal!")
 
 #programacion del programa
 
-name = "oparin"
-#listener = sr.Recognizer()
+name = "Oparin"
+listener = sr.Recognizer()
 engine = pyttsx3.init()
 
 #codigo para iniciar con una voz por defecto
 
-voices = engine.getProperty('voices') 
+voices = engine.getProperty('voices')
 engine.setProperty('voice', voices[0].id)
 engine.setProperty('rate', 145)
-#for voice in voices:
-#    print(voice)
 
 # diccionario
 
-#funcion para cargar los datos
-def charge_data(name_dict, name_file):
+def charge_data(name_dict, name_file):          #funcion para cargar los datos
     try:
         with open(name_file) as f:
             for line in f:
-                (key, val) = line.split(",") # tomara como datos a todos los valores que esten antes y despues de una coma
-                val = val.rstrip("\n") # elimina el salto de linea|
+                (key, val) = line.split(",")    #tomara como datos a todos los valores que esten antes y despues de una coma
+                val = val.rstrip("\n")          #elimina el salto de linea|
                 name_dict[key] = val
-    except FileNotFoundError:
+    except FileNotFoundError as e:
         pass
+
 
 sites = dict()
 charge_data(sites, "pages.txt")
@@ -131,22 +115,6 @@ charge_data(programs, "apps.txt")
 contacts = dict()
 charge_data(contacts, "contacts.txt")
 
-sites = {
-    'google': 'google.com',
-    'youtube': 'youtube.com',
-    'facebook': 'facebook.com',
-    'whatsapp': 'web.whatsapp.com'
-}
-
-files = {
-    'nuevo': 'nuevo - nuevo.txt'
-}
-
-programs = {
-    'photoshop': r"D:\Photoshop\Adobe Photoshop 2022\Photoshop.exe",
-    'word': r"C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE"
-}
-
 #funcion para reproducir audio
 
 def talk(text):
@@ -156,52 +124,54 @@ def talk(text):
 #funcion de leer texto en caja de texto y hablar
 
 def read_and_talk():
-    text = text_info.get("1.0" , "end") #obtener todo el contenido de principio a fin
+    text = text_info.get("1.0", "end")  #obtener todo el contenido de principio a fin
     talk(text)
-    text.delete("1.0", "end")
 
 #funcion que escribe lo que encontro en internet y lo escribe en la caja de texto
 
 def write_text(text_wiki):
     text_info.insert(INSERT, text_wiki)
 
+#funcion para escuchar audio
+
 def listen(phrase=None):
-    global rec
-    listener = sr.Recognizer()
-    with sr.Microphone() as source:
+    listener = sr.Recognizer()    
+    with sr.Microphone() as source:            
         listener.adjust_for_ambient_noise(source)
         talk(phrase)
         pc = listener.listen(source)
     try:
         rec = listener.recognize_google(pc, language="es")
-        rec.lower()
+        rec = rec.lower()
     except sr.UnknownValueError:
-        print("No te entendi, intenta de nuevo")
+        print("No te entendí, intenta de nuevo")
     except sr.RequestError as e:
         print("Could not request results from Google Speech Recognition service; {0}".format(e))
     return rec
 
 #funciones asociadas a las palabras clave del diccionario key_words
 
-def reproduce(rec): #funcion para reproducir canciones y videos en youtube
-    music = rec.replace('reproduce', '')
-    print("reproduciendo" + music)
-    talk("Reproduciendo" + music)
-    pywhatkit.playonyt(music)  # abri youtube y busca lo que indiquemos
 
-def busca(rec): #funcion para buscar informacion en internet
+def reproduce(rec):                         #funcion para reproducir canciones y videos en youtube
+    music = rec.replace('reproduce', '')
+    print("Reproduciendo " + music)
+    talk("Reproduciendo " + music)
+    pywhatkit.playonyt(music)               #abri youtube y busca lo que indiquemos
+
+
+def busca(rec):                             #funcion para buscar informacion en internet
     search = rec.replace('busca', '')
-    print('Buscando' + search)
-    talk('Buscando' + search)
     wikipedia.set_lang("es")
     wiki = wikipedia.summary(search, 1)
     talk(wiki)
-    write_text(search + ": " + wiki) #guarda lo encontrado en la funcion write_text
+    write_text(search + ": " + wiki)        #guarda lo encontrado en la funcion write_text
 
-def abre(rec): #funcion para abrir sitios web y programas
+
+def abre(rec):                              #funcion para abrir sitios web y programas
     task = rec.replace('abre', '').strip()
+
     if task in sites:
-        for task in rec:
+        for task in sites:
             if task in rec:
                 sub.call(f'start chrome.exe {sites[task]}', shell=True)
                 talk(f'Abriendo {task}')
@@ -211,10 +181,11 @@ def abre(rec): #funcion para abrir sitios web y programas
                 talk(f'Abriendo {task}')
                 os.startfile(programs[task])
     else:
-        talk("Lo siento, no hay paginas o programas agregados")
-        print("Lo siento, no hay paginas o programas agregados")
+        talk("Lo siento, parece que aún no has agregado esa app o página web, \
+            usa los botones de agregar!")
 
-def archivo(rec): #funcion para abrir archivos
+
+def archivo(rec):                           #funcion para abrir archivos
     file = rec.replace('archivo', '').strip()
     if file in files:
         for file in files:
@@ -222,20 +193,22 @@ def archivo(rec): #funcion para abrir archivos
                 sub.Popen([files[file]], shell=True)
                 talk(f'Abriendo {file}')
     else:
-        talk("Lo siento, no hay archivos agregados")
-        print("Lo siento, no hay archivos agregados")
+        talk("Lo siento, parece que aún no has agregado ese archivo, \
+            usa los botones de agregar!")
 
-def escribe(rec): #funcion para escribir en un archivo de texto
+
+def escribe(rec):                           #funcion para escribir en un archivo de texto
     try:
         with open("nota.txt", 'a') as f:
             write(f)
 
     except FileNotFoundError as e:
-        file = open("nota.txt", 'w')
+        file = open("nota.txt", 'a')
         write(file)
 
-def envia_mensaje(rec): #funcion para enviar mensaje por whatsapp web
-    talk("¿A quien quieres enviarle un mensaje?")
+
+def enviar_mensaje(rec):                    #funcion para enviar mensaje por whatsapp web
+    talk("¿A quién quieres enviar el mensaje?")
     contact = listen("Te escucho")
     contact = contact.strip()
 
@@ -243,45 +216,49 @@ def envia_mensaje(rec): #funcion para enviar mensaje por whatsapp web
         for cont in contacts:
             if cont == contact:
                 contact = contacts[cont]
-                talk("¿Que mensaje deseas enviarle?")
-                message = listen()
+                talk("¿Qué mensaje quieres enviarle?")
+                message = listen("Te escucho")
                 talk("Enviando mensaje...")
                 whapp.send_message(contact, message)
     else:
-        talk("No se encontro el contacto")
+        talk("Parece qué aún no has agregado a ese contacto, usa el botón de agregar!")
 
-def cierra(rec): #funcion para cerrar programas qu tengamos agregados
+
+def cierra(rec):                                #funcion para cerrar programas qu tengamos agregados
     for task in programs:
-        kill_task = programs[task].split('\\') #guardar los datos en una lista
-        kill_task = kill_task[-1] #obtienen el ultimo elemento de la lista
+        kill_task = programs[task].split('\\')  #guardar los datos en una lista
+        kill_task = kill_task[-1]               #obtienen el ultimo elemento de la lista
         if task in rec:
-            sub.call(f'TASKKILL /IM {kill_task} /F', shell = True) #comando para cerrar el programa 
+            sub.call(f'TASKKILL /IM {kill_task} /F', shell=True)#comando para cerrar el programa 
             talk(f'Cerrando {task}')
         if 'todo' in rec:
-            sub.call(f'TASKKILL /IM {kill_task} /F', shell = True)
+            sub.call(f'TASKKILL /IM {kill_task} /F', shell=True)
             talk(f'Cerrando {task}')
     if 'ciérrate' in rec:
-        talk('Adios...')
-        sub.call('TASKKILL /IM python.exe /F', shell = True) #TASKKILL /IM nombre del archivo ejecutable /F
+        talk('Adiós!')
+        sub.call('TASKKILL /IM python.exe /F', shell=True)#TASKKILL /IM nombre del archivo ejecutable /F
 
-def buscame(rec): #funcion para buscar en el buscador de google usando el archivo browser.py
+
+def buscame(rec):                               #funcion para buscar en el buscador de google usando el archivo browser.py
     something = rec.replace('búscame', '').strip()
     talk("Buscando " + something)
-    browser.search(something)
+    browser.search(something)            
 
 #diccionario para realizacion de los comandos en la funcion principal
 
-key_words ={
-    'reproduce' : reproduce,
-    'busca' : busca,
-    'abre' : abre,
-    'archivo' : archivo,
-    'escribe' : escribe,
-    'mensaje' : envia_mensaje,
-    'cierra' : cierra,
+key_words = {
+    'reproduce': reproduce,
+    'busca': busca,
+    'abre': abre,
+    'archivo': archivo,
+    'escribe': escribe,
+    'mensaje': enviar_mensaje,
+    'cierra': cierra,
     'ciérrate': cierra,
-    'búscame' : buscame,
+    'búscame': buscame
 }
+
+#funcion principal
 
 def run_oparin():
     chat = ChatBot("oparin", database_uri=None)#database_uri=None nos permite borrar del aprendizaje algun dato de nuestra BD
@@ -292,45 +269,43 @@ def run_oparin():
         try:
             rec = listen("")
         except UnboundLocalError:
-            talk("No te entendi, intenta de nuevo")
+            talk("No te entendí, intenta de nuevo")
             continue
         if 'busca' in rec:
-            key_words['busca'](rec) #busqueda y acceso a una sola clave del diccionario key_words
-            break 
+            key_words['busca'](rec)#busqueda y acceso a una sola clave del diccionario key_words
+            break
         elif rec.split()[0] in key_words:
-            key = rec.split()[0]
-            key_words[key](rec) #busqueda y acceso en nuestro directorio key_word
+            key = rec.split()[0]        
+            key_words[key](rec)#busqueda y acceso en nuestro directorio key_word
         else:
-            print("TU: " ,rec)
-            answer = chat.get_response(rec) # obtiene la respuesta del bot
-            print("OPARIN: " , answer)
+            print("Tú: ", rec)
+            answer = chat.get_response(rec)# obtiene la respuesta del bot
+            print("Oparin: ", answer)
             talk(answer)
-            if 'adios' in rec:
+            if 'chao' in rec:
                 break
-    main_window.update() #actualizar la ventana y evitamos el error de no responde
-        
+    main_window.update()#actualizar la ventana y evitamos el error de no responde
 
 #funcion para escribir dentro de un documento de texto
 
 def write(f):
-    talk("¿Que deseas que escriba?")
+    talk("¿Qué quieres que escriba?")
     rec_write = listen("Te escucho")
     f.write(rec_write + os.linesep)
     f.close()
-    talk("Listo, ya puedes reviar el documento...")
+    talk("Listo, puedes revisarlo")
     sub.Popen("nota.txt", shell=True)
 
 #funcion para abrir una nueva ventana y agregar archivos
 
 def open_w_files():
-    #crear nueva ventana
-    global namefile_entry, pathf_entry
-    window_files = Toplevel()
-    window_files.title("Agrega archivos")
+    global namefile_entry, pathf_entry # variables globales
+    window_files = Toplevel()#crear nueva ventana
+    window_files.title("Agregar archivos")
     window_files.configure(bg="#434343")
     window_files.geometry("300x200")
     window_files.resizable(0, 0)
-    main_window.eval(f'tk::PlaceWindow {str(window_files)} center')
+    main_window.eval(f'tk::PlaceWindow {str(window_files)} center') # coloca la nueva ventana en el centro
 
     title_label = Label(
         window_files, 
@@ -356,7 +331,7 @@ def open_w_files():
         window_files, 
         text="Ruta del archivo",
         fg="white", 
-        bg="#434343",
+        bg="#434343", 
         font=('Arial', 10, 'bold')
     )
     path_label.pack(pady=2)
@@ -365,13 +340,13 @@ def open_w_files():
     pathf_entry.pack(pady=1)
 
     save_button = Button(
-        window_files,
-        text="Guardar",
+        window_files, 
+        text="Guardar", 
         bg='#16222A',
         fg="white", 
         width=8, 
-        height=1,
-        command=add_files
+        height=1, 
+        command=add_files   #eventos / funciones
     )
     save_button.pack(pady=4)
 
@@ -380,7 +355,7 @@ def open_w_files():
 def open_w_apps():
     global nameapps_entry, patha_entry
     window_apps = Toplevel()
-    window_apps.title("Agrega apps")
+    window_apps.title("Agregar apps")
     window_apps.configure(bg="#434343")
     window_apps.geometry("300x200")
     window_apps.resizable(0, 0)
@@ -410,7 +385,7 @@ def open_w_apps():
         window_apps, 
         text="Ruta de la app",
         fg="white", 
-        bg="#434343",
+        bg="#434343", 
         font=('Arial', 10, 'bold')
     )
     path_label.pack(pady=2)
@@ -434,7 +409,7 @@ def open_w_apps():
 def open_w_pages():
     global namepages_entry, pathp_entry
     window_pages = Toplevel()
-    window_pages.title("Agrega páginas web")
+    window_pages.title("Agregar páginas web")
     window_pages.configure(bg="#434343")
     window_pages.geometry("300x200")
     window_pages.resizable(0, 0)
@@ -477,53 +452,75 @@ def open_w_pages():
         text="Guardar", 
         bg='#16222A',
         fg="white", 
-        width=8,
-        height=1,
+        width=8, 
+        height=1, 
         command=add_pages
     )
-    save_button.pack(pady=4) 
+    save_button.pack(pady=4)
 
 #funcion para abrir una nueva ventana 
 
 def open_w_contacts():
     global namecontact_entry, phone_entry
     window_contacts = Toplevel()
-    window_contacts.title("Agrega un contacto")
+    window_contacts.title("Agregar un contacto")
     window_contacts.configure(bg="#434343")
     window_contacts.geometry("300x200")
     window_contacts.resizable(0, 0)
     main_window.eval(f'tk::PlaceWindow {str(window_contacts)} center')
 
-    title_label = Label(window_contacts, text="Agrega un contacto",
-                        fg="white", bg="#434343", font=('Arial', 15, 'bold'))
+    title_label = Label(
+        window_contacts, 
+        text="Agrega un contacto",
+        fg="white", 
+        bg="#434343", 
+        font=('Arial', 15, 'bold')
+    )
     title_label.pack(pady=3)
-    name_label = Label(window_contacts, text="Nombre del contacto",
-                       fg="white", bg="#434343", font=('Arial', 10, 'bold'))
+    name_label = Label(
+        window_contacts, 
+        text="Nombre del contacto",
+        fg="white", 
+        bg="#434343", 
+        font=('Arial', 10, 'bold')
+    )
     name_label.pack(pady=2)
 
     namecontact_entry = Entry(window_contacts)
     namecontact_entry.pack(pady=1)
 
-    phone_label = Label(window_contacts, text="Número celular (con código del país).",
-                       fg="white", bg="#434343", font=('Arial', 10, 'bold'))
+    phone_label = Label(
+        window_contacts, 
+        text="Número celular (con código del país).",
+        fg="white", 
+        bg="#434343", 
+        font=('Arial', 10, 'bold')
+    )
     phone_label.pack(pady=2)
 
     phone_entry = Entry(window_contacts, width=35)
     phone_entry.pack(pady=1)
 
-    save_button = Button(window_contacts, text="Guardar", bg='#16222A',
-                         fg="white", width=8, height=1, command=add_contacts)
+    save_button = Button(
+        window_contacts, 
+        text="Guardar", 
+        bg='#16222A',
+        fg="white", 
+        width=8, 
+        height=1, 
+        command=add_contacts
+    )
     save_button.pack(pady=4)
 
 #funcion boton segunda ventana para guardar archivos
 
 def add_files():
-    name_file = namefile_entry.get().strip() # recibe el valor de la variable y comprueba si esta vacio
+    name_file = namefile_entry.get().strip()# recibe el valor de la variable y comprueba si esta vacio
     path_file = pathf_entry.get().strip()
 
     files[name_file] = path_file
     save_data(name_file, path_file, "archivos.txt")
-    namefile_entry.delete(0, "end") #borra los datos despues de que los guarda
+    namefile_entry.delete(0, "end")#borra los datos despues de que los guarda
     pathf_entry.delete(0, "end")
 
 #funcion boton segunda ventana para guardar apps
@@ -540,11 +537,11 @@ def add_apps():
 #funcion boton segunda ventana para guardar archivos
 
 def add_pages():
-    name_pages = namepages_entry.get().strip()
+    name_page = namepages_entry.get().strip()
     url_pages = pathp_entry.get().strip()
 
-    sites[name_pages] = url_pages
-    save_data(name_pages, url_pages, "pages.txt")
+    sites[name_page] = url_pages
+    save_data(name_page, url_pages, "pages.txt")
     namepages_entry.delete(0, "end")
     pathp_entry.delete(0, "end")
 
@@ -573,19 +570,21 @@ def save_data(key, value, file_name):
 
 def talk_pages():
     if bool(sites) == True:
-        talk("Has agregado las siguientes paginas web")
+        talk("Has agregado las siguientes páginas web")
         for site in sites:
             talk(site)
     else:
-        talk("Aun no has agregado alguna pagina web")
+        talk("Aún no has agregado páginas web!")
+
 
 def talk_apps():
     if bool(programs) == True:
-        talk("Has agregado los siguientes programas")
+        talk("Has agregado las siguientes apps")
         for app in programs:
             talk(app)
     else:
-        talk("Aun no has agregado algun programa")
+        talk("Aún no has agregado apps!")
+
 
 def talk_files():
     if bool(files) == True:
@@ -593,7 +592,7 @@ def talk_files():
         for file in files:
             talk(file)
     else:
-        talk("Aun no has agregado algun archivo")
+        talk("Aún no has agregado archivos!")
 
 def talk_contacts():
     if bool(contacts) == True:
@@ -606,10 +605,11 @@ def talk_contacts():
 #funcion para preguntas nombre
 
 def give_me_name():
-    talk("Hola, ¿Cómo te llamas?")
+    talk("Hola, ¿cómo te llamas?")
     name = listen("Te escucho")
     name = name.strip()
     talk(f"Bienvenido {name}")
+
     try:
         with open("name.txt", 'w') as f:
             f.write(name)
@@ -620,6 +620,7 @@ def give_me_name():
 #funcion para ejecutar la funcion al iniciar el programa
 
 def say_hello():
+
     if os.path.exists("name.txt"):
         with open("name.txt") as f:
             for name in f:
@@ -627,11 +628,12 @@ def say_hello():
     else:
         give_me_name()
 
-#hilos
+#hilo
 
 def thread_hello():
     t = tr.Thread(target=say_hello)
-    t.start() #inicializa el hilo
+    t.start()#inicializa el hilo
+
 
 thread_hello()
 
@@ -639,8 +641,8 @@ thread_hello()
 
 button_voice_mx = Button(
                             main_window, 
-                            text="Voz Mexico", 
-                            bg="#00b4db",
+                            text="Idioma Español", 
+                            bg="#444343",
                             fg="#fff",
                             font=("Arial", 12, "bold"),
                             border=0,
@@ -649,8 +651,8 @@ button_voice_mx = Button(
 
 button_voice_us = Button(
                             main_window, 
-                            text="Voz English", 
-                            bg="#00b4db",
+                            text="Idioma English", 
+                            bg="#444343",
                             fg="#fff",
                             font=("Arial", 12, "bold"),
                             border=0,
@@ -671,7 +673,7 @@ button_listen = Button(
 button_speak = Button(
                             main_window, 
                             text="Hablar", 
-                            bg="#00b4db",
+                            bg="#444343",
                             fg="#fff",
                             font=("Arial", 12, "bold"),
                             border=0,
@@ -681,7 +683,7 @@ button_speak = Button(
 button_add_files = Button(
                             main_window, 
                             text="Agregar Archivos", 
-                            bg="#00b4db",
+                            bg="#444343",
                             fg="#fff",
                             font=("Arial", 12, "bold"),
                             border=0,
@@ -691,7 +693,7 @@ button_add_files = Button(
 button_add_apps = Button(
                             main_window, 
                             text="Agregar Apps", 
-                            bg="#00b4db",
+                            bg="#444343",
                             fg="#fff",
                             font=("Arial", 12, "bold"),
                             border=0,
@@ -701,7 +703,7 @@ button_add_apps = Button(
 button_add_pages = Button(
                             main_window, 
                             text="Agregar Paginas", 
-                            bg="#00b4db",
+                            bg="#444343",
                             fg="#fff",
                             font=("Arial", 12, "bold"),
                             border=0,
@@ -711,7 +713,7 @@ button_add_pages = Button(
 button_tell_pages = Button(
                             main_window, 
                             text="Paginas Agregadas", 
-                            bg="#00b4db",
+                            bg="#444343",
                             fg="#fff",
                             font=("Arial", 9, "bold"),
                             border=0,
@@ -721,7 +723,7 @@ button_tell_pages = Button(
 button_tell_apps = Button(
                             main_window, 
                             text="Programas Agregados", 
-                            bg="#00b4db",
+                            bg="#444343",
                             fg="#fff",
                             font=("Arial", 9, "bold"),
                             border=0,
@@ -731,7 +733,7 @@ button_tell_apps = Button(
 button_tell_files = Button( 
                             main_window, 
                             text="Archivos Agregados", 
-                            bg="#00b4db",
+                            bg="#444343",
                             fg="#fff",
                             font=("Arial", 9, "bold"),
                             border=0,
@@ -741,7 +743,7 @@ button_tell_files = Button(
 button_add_contacts = Button( 
                             main_window, 
                             text="Agregar Contacto", 
-                            bg="#00b4db",
+                            bg="#444343",
                             fg="#fff",
                             font=("Arial", 12, "bold"),
                             border=0,
@@ -751,7 +753,7 @@ button_add_contacts = Button(
 button_tell_contacts = Button( 
                             main_window, 
                             text="Contactos Agregados", 
-                            bg="#00b4db",
+                            bg="#444343",
                             fg="#fff",
                             font=("Arial", 9, "bold"),
                             border=0,
@@ -777,4 +779,4 @@ button_tell_files.place(x=483, y=320, width=128, height=30)
 button_tell_contacts.pack(side=BOTTOM, pady=3)
 
 
-main_window.mainloop() 
+main_window.mainloop()
